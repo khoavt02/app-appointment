@@ -9,13 +9,14 @@ import {
 import React, { useEffect, useState } from "react";
 import { FontAwesome } from "react-native-vector-icons";
 import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
 
 const DoctorsList = () => {
   // Dummy data for our doctors
-  const [doctors, setDoctors] = useState([]);
+    const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
+    const navigation = useNavigation();
     useEffect(() => {
       const fetchDoctors = async () => {
         try {
@@ -34,32 +35,46 @@ const DoctorsList = () => {
 
       fetchDoctors();
     }, []);
-
+    const handleMoreInfo = (item) => {
+        // Navigate to the DoctorDetailsScreen and pass doctor data
+        navigation.navigate('DoctorDetails', { doctor: item });
+      };
   // Function to render an individual doctor card
   const renderDoctorCard = ({ item }) => (
     <View style={styles.doctorCard} key={item.id}>
-      //<Image source={{ uri: item.avatar }} style={styles.doctorImage} />
+        {item.avatar && (
+          <Image
+            source={{ uri: `data:image/jpeg;base64,${item.avatar}` }}
+            style={styles.doctorImage}
+          />
+        )}
       <Text style={styles.doctorName}>{item.name}</Text>
       <Text style={styles.doctorSpecialty}>{item.specializationName}</Text>
-      <TouchableOpacity style={styles.learnMoreButton}>
+      <TouchableOpacity style={styles.learnMoreButton} onPress={() => handleMoreInfo(item)}>
         <Text style={styles.learnMoreButtonText}>More Info</Text>
       </TouchableOpacity>
     </View>
   );
 
   return (
-    <View style={styles.doctorsContainer}>
-      <Text style={styles.doctorsTitle}>Our Top Doctors</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={{ flexDirection: "row" }}>
-          {doctors.map((item) => renderDoctorCard({ item}))}
-          <TouchableOpacity style={styles.showMoreButton}>
-            <Text style={styles.showMoreButtonText}>Show all Doctors </Text>
-            <FontAwesome name="arrow-right" size={15} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </View>
+     <View style={styles.doctorsContainer}>
+        <Text style={styles.doctorsTitle}>Our Top Doctors</Text>
+        {loading ? (
+          <Text>Loading...</Text> // Có thể hiển thị một spinner hoặc thông báo đang tải
+        ) : error ? (
+          <Text>Error: {error}</Text> // Hiển thị lỗi nếu có
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ flexDirection: "row" }}>
+              {doctors.map((item, index) => renderDoctorCard({ item }))}
+              <TouchableOpacity style={styles.showMoreButton}>
+                <Text style={styles.showMoreButtonText}>Show all Doctors </Text>
+                <FontAwesome name="arrow-right" size={15} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        )}
+      </View>
   );
 };
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState, useEffect} from "react";
 import {
   StyleSheet,
   Text,
@@ -12,16 +12,37 @@ import { FontAwesome, MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import CustomButton from "../components/CustomButton";
-
+import { WebView } from "react-native-webview";
+import axios from "axios";
 const DoctorDetailsScreen = ({ route }) => {
   const { doctor } = route.params ?? {};
   const navigation = useNavigation(); // Initialize navigation
-
+  const [location, setLocation] = useState(null);
+  const [loading, setLoading] = useState(true);
   const handleViewProfile = () => {
     // Navigate to the DoctorDetails screen with the selected doctor's data
     navigation.navigate("Doctor Lists", { doctor });
   };
-
+// Hàm gọi API Geocoding để lấy tọa độ từ địa chỉ
+  const fetchCoordinates = async (address) => {
+    try {
+      const response = await axios.get(
+        `https://atlas.microsoft.com/search/address/json?api-version=1.0&subscription-key=BM0ZJTIlBt7z06sbOduFcod29bJaIkhaHoHGtS2IrON80DgXKhaIJQQJ99AIACYeBjFmzkqIAAAgAZMPq6E2&query=${encodeURIComponent(address)}`
+      );
+      const coordinates = response.data.results[0].position;
+      setLocation(coordinates); // Lưu tọa độ vào state
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching coordinates:", error);
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+      if (doctor && doctor.clinicAddress) {
+        // Gọi hàm fetchCoordinates để lấy tọa độ khi có địa chỉ
+        fetchCoordinates(doctor.clinicAddress);
+      }
+    }, [doctor]);
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -41,7 +62,7 @@ const DoctorDetailsScreen = ({ route }) => {
             {/* Top Section */}
             <View style={styles.topContainer}>
               <Image
-                source={{ uri: doctor.photo }}
+                source={{ uri: `data:image/jpeg;base64,${doctor.avatar}` }}
                 style={styles.doctorImage}
               />
               <Text style={styles.doctorName}>
@@ -51,19 +72,9 @@ const DoctorDetailsScreen = ({ route }) => {
 
             {/* Middle Container with Icons */}
             <View style={styles.middleContainer}>
-              {/* Location */}
-              <View style={styles.box}>
-                <View style={styles.locationContainer}>
-                  <FontAwesome name="map-marker" size={30} color="#00b894" />
-                  <Text style={styles.locationText}>
-                    {doctor
-                      ? `Location: ${doctor.location}`
-                      : "Location Not Found"}
-                  </Text>
-                </View>
-              </View>
 
-              {/* Reviews */}
+
+              {/* Reviews
               <View style={styles.box}>
                 <View style={styles.reviewsContainer}>
                   <MaterialIcons name="star" size={30} color="#f9ca24" />
@@ -73,27 +84,27 @@ const DoctorDetailsScreen = ({ route }) => {
                       : "Reviews Not Found"}
                   </Text>
                 </View>
-              </View>
+              </View>*/}
 
-              {/* Experience */}
+              {/* Experience*/}
               <View style={styles.box}>
                 <View style={styles.experienceContainer}>
                   <Ionicons name="ios-briefcase" size={30} color="#636e72" />
                   <Text style={styles.experience}>
                     {doctor
-                      ? `Experience: ${doctor.experience}`
+                      ? `Email: ${doctor.email}`
                       : "Experience Not Found"}
                   </Text>
                 </View>
               </View>
 
-              {/* Education */}
+              {/* Education*/}
               <View style={styles.box}>
                 <View style={styles.educationContainer}>
-                  <Ionicons name="ios-school" size={30} color="#130f40" />
+                  <Ionicons name="call" size={30} color="#130f40" />
                   <Text style={styles.education}>
                     {doctor
-                      ? `Education: ${doctor.education}`
+                      ? `Phone: ${doctor.phone}`
                       : "Education Not Found"}
                   </Text>
                 </View>
@@ -105,20 +116,46 @@ const DoctorDetailsScreen = ({ route }) => {
                   <Ionicons name="ios-globe" size={30} color="#4834d4" />
                   <Text style={styles.languages}>
                     {doctor
-                      ? `Languages: ${doctor.languages.join(", ")}`
+                      ? `Specialization: ${doctor.specializationName}`
                       : "Languages Not Found"}
                   </Text>
                 </View>
               </View>
+              {/* Location */}
+            <View style={styles.box}>
+              <View style={styles.locationContainer}>
+                <FontAwesome name="map-marker" size={30} color="#00b894" />
+                <Text style={styles.address}>
+                  {doctor
+                    ? `Location: ${doctor.address}`
+                    : "Location Not Found"}
+                </Text>
+              </View>
+            </View>
             </View>
 
             {/* Bio Section */}
             <View style={styles.bioSection}>
               <Text style={styles.bio}>
-                {doctor ? `Bio: ${doctor.bio}` : "Bio Not Found"}
+                {doctor ? `Bio: ${doctor.description}` : "Bio Not Found"}
               </Text>
             </View>
-
+            {/* Bản đồ */}
+            <View style={styles.mapContainer}>
+              <Text style={styles.mapTitle}>Clinic Location</Text>
+              {loading ? (
+                <ActivityIndicator size="large" color="#0000ff" />
+              ) : (
+                location && (
+                  <WebView
+                    style={styles.map}
+                    source={{
+                      uri: `https://atlas.microsoft.com/map/static/png?subscription-key=BM0ZJTIlBt7z06sbOduFcod29bJaIkhaHoHGtS2IrON80DgXKhaIJQQJ99AIACYeBjFmzkqIAAAgAZMPq6E2&api-version=1.0&center=${location.lon},${location.lat}&zoom=14&width=400&height=300`,
+                    }}
+                  />
+                )
+              )}
+            </View>
             {/* Button to Book an Appointment */}
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.bookAppointmentButton}>
