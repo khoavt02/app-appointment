@@ -6,11 +6,27 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React from "react";
+import React, {useEffect, useState} from "react";
 import { FontAwesome5 } from "react-native-vector-icons";
-
+import axios from 'axios';
 const Featured = () => {
   // Sample data for the card slider
+  const [clinics, setClinics] = useState([]);
+  useEffect(() => {
+      const fetchLists = async () => {
+        try {
+          const response = await axios.get("http://10.0.2.2:8080/api/clinic/get-list-clinics");
+          setClinics(response.data.clinics);
+        } catch (err) {
+          console.log(err);
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchLists();
+    }, []);
   const featureData = [
     {
       id: "1",
@@ -45,22 +61,13 @@ const Featured = () => {
   // Render individual card item
   const renderCardItem = ({ item }) => (
     <View style={styles.card} key = {item.id}>
-      <Image source={{ uri: item.image }} style={styles.cardImage} />
+      <Image
+      source={{ uri: `data:image/jpeg;base64,${item.image}` }}
+      style={styles.cardImage} />
       <View style={styles.cardTextField}>
         <View style={styles.cardTextFields}>
-          <Text style={styles.cardTitle}>{item.title}</Text>
-          <Text style={styles.cardSpecialty}>{item.description}</Text>
-        </View>
-        <View style={styles.cardButton}>
-          <TouchableOpacity style={styles.iconContainer}>
-            <FontAwesome5
-              name={item.icon}
-              size={22}
-              color={item.color}
-              style={styles.iconStyle}
-            />
-            {/* Display the specified icon and color for each card */}
-          </TouchableOpacity>
+          <Text style={styles.cardTitle}>{item.name}</Text>
+          <Text style={styles.cardSpecialty}>{item.phone}</Text>
         </View>
       </View>
     </View>
@@ -69,7 +76,7 @@ const Featured = () => {
   return (
     <View style={styles.cardSlider}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {featureData.map((item) => renderCardItem({ item }))}
+        {clinics.map((item) => renderCardItem({ item }))}
       </ScrollView>
     </View>
   );

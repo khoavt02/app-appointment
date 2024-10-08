@@ -6,14 +6,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DoctorCard from "../components/DoctorCard";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-
+import axios from 'axios';
 const DoctorListsScreen = () => {
   const [searchText, setSearchText] = useState(""); // State for the search input
-
+  const [doctors, setDoctors] = useState([]);
   const doctorsData = [
     {
       id: "1",
@@ -162,7 +162,21 @@ const DoctorListsScreen = () => {
   const categories = Array.from(
     new Set(doctorsData.flatMap((doctor) => doctor.categories))
   );
+  useEffect(() => {
+        const fetchDoctors = async () => {
+          try {
+            const response = await axios.get("http://10.0.2.2:8080/api/get-list-doctor");
+            setDoctors(response.data.doctors);
+          } catch (err) {
+            console.log(err);
+            setError(err.message);
+          } finally {
+            setLoading(false);
+          }
+        };
 
+        fetchDoctors();
+      }, []);
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
@@ -176,13 +190,13 @@ const DoctorListsScreen = () => {
           />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search Doctors"
+            placeholder="Tìm kiếm"
             value={searchText}
             onChangeText={(text) => setSearchText(text)}
           />
         </View>
 
-        {/* Category Menu (Horizontal Scroll) */}
+        {/* Category Menu (Horizontal Scroll)
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -193,14 +207,14 @@ const DoctorListsScreen = () => {
               <Text style={styles.categoryButtonText}>{category}</Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </ScrollView>*/}
 
-        <Text style={styles.title}>All Doctors</Text>
+        <Text style={styles.title}>Tất cả bác sĩ</Text>
         <ScrollView
           contentContainerStyle={styles.doctorList}
           showsVerticalScrollIndicator={false}
         >
-          {doctorsData.map((doctor) => (
+          {doctors.map((doctor) => (
             <DoctorCard key={doctor.id} doctor={doctor} />
           ))}
         </ScrollView>

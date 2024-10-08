@@ -8,6 +8,7 @@ import DoctorListsScreen from "../screens/DoctorListsScreen";
 import DoctorDetailsScreen from "../screens/DoctorDetailsScreen";
 import AppointmentBookingScreen from "../screens/AppointmentBookingScreen";
 import ViewAppointmentsScreen from "../screens/ViewAppointmentsScreen";
+import DoctorStack from "./DoctorStack";
 
 const Tab = createBottomTabNavigator();
 
@@ -15,7 +16,7 @@ const AppNavigation = () => {
   return (
     <Tab.Navigator>
       <Tab.Screen
-        name="Home"
+        name="Trang chủ"
         component={HomeScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
@@ -26,51 +27,18 @@ const AppNavigation = () => {
       />
 
       <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-circle-outline" size={size} color={color} />
-          ),
-          headerShown: false,
-        }}
-      />
+          name="Bác sĩ"
+          component={DoctorStack}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <MaterialIcons name="local-hospital" size={size} color={color} />
+            ),
+            headerShown: false,
+          }}
+          lazy={false}
+        />
       <Tab.Screen
-        name="Doctor Lists"
-        component={DoctorListsScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="local-hospital" size={size} color={color} />
-          ),
-          headerShown: false,
-        }}
-      />
-      <Tab.Screen
-        name="DoctorDetails"
-        component={DoctorDetailsScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="information-circle-outline"
-              size={size}
-              color={color}
-            />
-          ),
-          headerShown: false,
-        }}
-      />
-
-      <Tab.Screen
-        name="Appointment Booking"
-        component={AppointmentBookingScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="My Appointments"
+        name="Lịch khám"
         component={ViewAppointmentsScreen}
         options={{
           tabBarIcon: ({ color, size }) => (

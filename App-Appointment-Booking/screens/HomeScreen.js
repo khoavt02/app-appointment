@@ -27,11 +27,7 @@ const HomeScreen = () => {
 
           <View style={styles.topContainer}>
             <View intensity={20} style={styles.blurContainer}>
-              <Text style={styles.greetingName}>Hello, Rajkumar</Text>
-              <Image
-                source={require("../assets/avatar.jpg")}
-                style={styles.avatar}
-              />
+              <Text style={styles.greetingName}>Đặt lịch khám bệnh</Text>
             </View>
           </View>
 
@@ -44,20 +40,15 @@ const HomeScreen = () => {
               marginTop: 10,
             }}
           >
-            Featured
+            Phòng khám
           </Text>
           {/* Featured Section */}
           <Featured />
-          {/* Recommendation Section */}
-          <Recommendations />
-
           {/* Our Doctors Section */}
           <DoctorsList />
         </View>
         {/* Services Section */}
         <ServicesList />
-        {/* Testimonial Section */}
-        <TestimonialList />
       </ScrollView>
     </SafeAreaView>
   );

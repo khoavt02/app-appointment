@@ -6,11 +6,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React from "react";
+import React , { useEffect, useState } from "react";
 import { FontAwesome5 } from "react-native-vector-icons";
+import axios from 'axios';
 
 const ServicesList = () => {
   // Sample data for Our Services
+  const [specs, setSpecs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const servicesData = [
     {
       id: "1",
@@ -62,25 +66,38 @@ const ServicesList = () => {
       color: "teal",
     },
   ];
+  useEffect(() => {
+        const fetchLists = async () => {
+          try {
+            const response = await axios.get("http://10.0.2.2:8080/api/specialization/get-list-specialization");
+            setSpecs(response.data.specializations);
+          } catch (err) {
+            console.log(err);
+            setError(err.message);
+          } finally {
+            setLoading(false);
+          }
+        };
 
+        fetchLists();
+      }, []);
   // Render individual service item
   const renderServiceItem = (service) => (
     <View style={styles.serviceBox} key={service.id}>
       <FontAwesome5
-        name={service.icon}
+        name={service.image}
         size={30}
-        color={service.color}
+        color={service.description}
         style={styles.serviceIcon}
       />
-      <Text style={styles.serviceTitle}>{service.title}</Text>
-      <Text style={styles.serviceDescription}>{service.description}</Text>
+      <Text style={styles.serviceTitle}>{service.name}</Text>
     </View>
   );
   return (
     <View style={styles.servicesContainer}>
-      <Text style={styles.servicesTitle}>Our Services</Text>
+      <Text style={styles.servicesTitle}>Chuyên khoa</Text>
       <View style={styles.servicesList}>
-        {servicesData.map((service) => renderServiceItem(service))}
+        {specs.map((service) => renderServiceItem(service))}
       </View>
     </View>
   );

@@ -9,19 +9,19 @@ const DoctorCard = ({ doctor, index }) => {
   const handleViewProfile = () => {
     // Navigate to the DoctorDetails screen with the selected doctor's data
     navigation.navigate('DoctorDetails', { doctor });
+    //navigation.navigate('Doctors', { screen: 'DoctorDetails' }, {doctor});
   };
   return (
     <View style={styles.cardContainer} key = {index}>
       <View style={styles.card}>
         <View style={styles.topCardContainer}>
-          <Image source={{ uri: doctor.photo }} style={styles.photo} />
+          <Image source={{ uri: `data:image/jpeg;base64,${doctor.avatar}` }} style={styles.photo} />
           <View style={styles.detailsContainer}>
             <Text style={styles.name}>{doctor.name}</Text>
-            <Text style={styles.category}>{doctor.categories.join(", ")}</Text>
             <Text style={styles.experience}>
-              Experience: {doctor.experience}
+              Chuyên khoa: {doctor.specializationName}
             </Text>
-            <Text style={styles.experience}>Rating: {doctor.rating}</Text>
+            <Text style={styles.experience}>Điện thoại: {doctor.phone}</Text>
           </View>
         </View>
         <View style={styles.doctorMoreInfo}>
@@ -29,8 +29,7 @@ const DoctorCard = ({ doctor, index }) => {
             style={styles.learnMoreButton}
             onPress={handleViewProfile}
           >
-            <Text style={styles.learnMoreButtonText}>View Profile</Text>
-            <Icon name="ios-arrow-forward" size={24} color="#fff" />
+            <Text style={styles.learnMoreButtonText}>Chi tiết</Text>
           </TouchableOpacity>
         </View>
       </View>

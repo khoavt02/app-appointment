@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Button,
+  ActivityIndicator
 } from "react-native";
 import { FontAwesome, MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,6 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import CustomButton from "../components/CustomButton";
 import { WebView } from "react-native-webview";
 import axios from "axios";
+import MapView, { Marker } from 'react-native-maps';
 const DoctorDetailsScreen = ({ route }) => {
   const { doctor } = route.params ?? {};
   const navigation = useNavigation(); // Initialize navigation
@@ -30,6 +32,7 @@ const DoctorDetailsScreen = ({ route }) => {
         `https://atlas.microsoft.com/search/address/json?api-version=1.0&subscription-key=BM0ZJTIlBt7z06sbOduFcod29bJaIkhaHoHGtS2IrON80DgXKhaIJQQJ99AIACYeBjFmzkqIAAAgAZMPq6E2&query=${encodeURIComponent(address)}`
       );
       const coordinates = response.data.results[0].position;
+      console.log("Coordinates fetched:", coordinates);
       setLocation(coordinates); // Lưu tọa độ vào state
       setLoading(false);
     } catch (error) {
@@ -37,12 +40,28 @@ const DoctorDetailsScreen = ({ route }) => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
-      if (doctor && doctor.clinicAddress) {
-        // Gọi hàm fetchCoordinates để lấy tọa độ khi có địa chỉ
-        fetchCoordinates(doctor.clinicAddress);
-      }
-    }, [doctor]);
+    if (doctor && doctor.clinicAddress) {
+      const fetchInterval = setInterval(() => {
+        if (!location) {
+          console.log("Retrying fetch coordinates...");
+          fetchCoordinates(doctor.clinicAddress);
+        } else {
+          clearInterval(fetchInterval);
+        }
+      }, 3000);
+
+      return () => clearInterval(fetchInterval);
+    }
+  }, [doctor, location]);
+
+
+    const handleBooking = () => {
+      // Navigate to the DoctorDetails screen with the selected doctor's data
+      navigation.navigate('Appointment Booking', { doctor });
+    };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -73,7 +92,12 @@ const DoctorDetailsScreen = ({ route }) => {
             {/* Middle Container with Icons */}
             <View style={styles.middleContainer}>
 
-
+              {/* Bio Section */}
+              <View style={styles.bioSection}>
+                <Text style={styles.bio}>
+                  {doctor ? `${doctor.description}` : "Bio Not Found"}
+                </Text>
+              </View>
               {/* Reviews
               <View style={styles.box}>
                 <View style={styles.reviewsContainer}>
@@ -89,7 +113,7 @@ const DoctorDetailsScreen = ({ route }) => {
               {/* Experience*/}
               <View style={styles.box}>
                 <View style={styles.experienceContainer}>
-                  <Ionicons name="ios-briefcase" size={30} color="#636e72" />
+                  <MaterialIcons name="email" size={30} color="#636e72" />
                   <Text style={styles.experience}>
                     {doctor
                       ? `Email: ${doctor.email}`
@@ -104,7 +128,7 @@ const DoctorDetailsScreen = ({ route }) => {
                   <Ionicons name="call" size={30} color="#130f40" />
                   <Text style={styles.education}>
                     {doctor
-                      ? `Phone: ${doctor.phone}`
+                      ? `Điến thoại: ${doctor.phone}`
                       : "Education Not Found"}
                   </Text>
                 </View>
@@ -113,10 +137,10 @@ const DoctorDetailsScreen = ({ route }) => {
               {/* Languages */}
               <View style={styles.box}>
                 <View style={styles.languagesContainer}>
-                  <Ionicons name="ios-globe" size={30} color="#4834d4" />
+                  <MaterialIcons name="school" size={30} color="#4834d4" />
                   <Text style={styles.languages}>
                     {doctor
-                      ? `Specialization: ${doctor.specializationName}`
+                      ? `Chuyên khoa: ${doctor.specializationName}`
                       : "Languages Not Found"}
                   </Text>
                 </View>
@@ -127,39 +151,44 @@ const DoctorDetailsScreen = ({ route }) => {
                 <FontAwesome name="map-marker" size={30} color="#00b894" />
                 <Text style={styles.address}>
                   {doctor
-                    ? `Location: ${doctor.address}`
+                    ? `Phòng khám: ${doctor.clinicName}`
                     : "Location Not Found"}
                 </Text>
               </View>
             </View>
             </View>
 
-            {/* Bio Section */}
-            <View style={styles.bioSection}>
-              <Text style={styles.bio}>
-                {doctor ? `Bio: ${doctor.description}` : "Bio Not Found"}
-              </Text>
-            </View>
+
             {/* Bản đồ */}
             <View style={styles.mapContainer}>
-              <Text style={styles.mapTitle}>Clinic Location</Text>
+              <Text style={styles.mapTitle}>Địa chỉ phòng khám: {doctor.clinicAddress}</Text>
               {loading ? (
                 <ActivityIndicator size="large" color="#0000ff" />
-              ) : (
-                location && (
-                  <WebView
-                    style={styles.map}
-                    source={{
-                      uri: `https://atlas.microsoft.com/map/static/png?subscription-key=BM0ZJTIlBt7z06sbOduFcod29bJaIkhaHoHGtS2IrON80DgXKhaIJQQJ99AIACYeBjFmzkqIAAAgAZMPq6E2&api-version=1.0&center=${location.lon},${location.lat}&zoom=14&width=400&height=300`,
+              ) : location ? (
+                <MapView
+                  style={styles.map}
+                  initialRegion={{
+                    latitude: location.lat,
+                    longitude: location.lon,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                  }}
+                >
+                  <Marker
+                    coordinate={{
+                      latitude: location.lat,
+                      longitude: location.lon,
                     }}
                   />
-                )
+                </MapView>
+              ) : (
+                <Text>Unable to load map. Location not available.</Text>
               )}
             </View>
             {/* Button to Book an Appointment */}
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.bookAppointmentButton}>
-                <Text style={styles.bookAppointmentText}>Book Appointment</Text>
+              <TouchableOpacity style={styles.bookAppointmentButton} onPress={handleBooking}>
+                <Text style={styles.bookAppointmentText}>Đặt lịch</Text>
               </TouchableOpacity>
             </View>
           </>
@@ -303,6 +332,16 @@ const styles = StyleSheet.create({
     height: 370,
     resizeMode: "cover",
   },
+   mapContainer: {
+      marginVertical: 20,
+      height: 300,
+      width: '100%',
+      alignItems: 'center',
+    },
+    map: {
+      width: '100%',
+      height: '100%',
+    },
 });
 
 export default DoctorDetailsScreen;

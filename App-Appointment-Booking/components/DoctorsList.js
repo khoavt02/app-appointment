@@ -21,9 +21,6 @@ const DoctorsList = () => {
       const fetchDoctors = async () => {
         try {
           const response = await axios.get("http://10.0.2.2:8080/api/get-list-doctor");
-
-          console.log("[List Doctor Data]",response.data.doctors);
-          //console.log(response.data);
           setDoctors(response.data.doctors);
         } catch (err) {
           console.log(err);
@@ -38,6 +35,7 @@ const DoctorsList = () => {
     const handleMoreInfo = (item) => {
         // Navigate to the DoctorDetailsScreen and pass doctor data
         navigation.navigate('DoctorDetails', { doctor: item });
+        //navigation.navigate('Doctors', { screen: 'DoctorDetails' }, {doctor: item});
       };
   // Function to render an individual doctor card
   const renderDoctorCard = ({ item }) => (
@@ -51,14 +49,14 @@ const DoctorsList = () => {
       <Text style={styles.doctorName}>{item.name}</Text>
       <Text style={styles.doctorSpecialty}>{item.specializationName}</Text>
       <TouchableOpacity style={styles.learnMoreButton} onPress={() => handleMoreInfo(item)}>
-        <Text style={styles.learnMoreButtonText}>More Info</Text>
+        <Text style={styles.learnMoreButtonText}>Chi tiết</Text>
       </TouchableOpacity>
     </View>
   );
 
   return (
      <View style={styles.doctorsContainer}>
-        <Text style={styles.doctorsTitle}>Our Top Doctors</Text>
+        <Text style={styles.doctorsTitle}>Bác sĩ</Text>
         {loading ? (
           <Text>Loading...</Text> // Có thể hiển thị một spinner hoặc thông báo đang tải
         ) : error ? (
@@ -119,7 +117,7 @@ const styles = StyleSheet.create({
   learnMoreButton:{
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#56428F",
+    backgroundColor: "#00b894",
     borderRadius: 10,
     padding: 10,
     marginTop: 10,
