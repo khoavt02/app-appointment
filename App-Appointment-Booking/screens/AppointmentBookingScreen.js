@@ -109,7 +109,7 @@ const AppointmentBookingScreen = ({route}) => {
                 email: email,
                 birthYear: birthYear,
                 address: address,
-                reason: reason,
+                description: reason,
             };
             console.log(bookingData);
             try {

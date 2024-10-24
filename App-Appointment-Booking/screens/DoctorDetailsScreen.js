@@ -7,7 +7,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Button,
-  ActivityIndicator
+  ActivityIndicator,
+  Linking
 } from "react-native";
 import { FontAwesome, MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -50,7 +51,7 @@ const DoctorDetailsScreen = ({ route }) => {
         } else {
           clearInterval(fetchInterval);
         }
-      }, 3000);
+      }, 5000);
 
       return () => clearInterval(fetchInterval);
     }
@@ -165,6 +166,7 @@ const DoctorDetailsScreen = ({ route }) => {
               {loading ? (
                 <ActivityIndicator size="large" color="#0000ff" />
               ) : location ? (
+              <>
                 <MapView
                   style={styles.map}
                   initialRegion={{
@@ -181,6 +183,26 @@ const DoctorDetailsScreen = ({ route }) => {
                     }}
                   />
                 </MapView>
+                  <TouchableOpacity
+                    style={styles.directionsButton}
+                    onPress={() => {
+                        Linking.canOpenURL('comgooglemaps://').then((supported) => {
+                          if (supported) {
+                            const url = `comgooglemaps://?daddr=${location.lat},${location.lon}`;
+                            Linking.openURL(url);
+                          } else {
+                            const url = `https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lon}`;
+                            Linking.openURL(url);
+                          }
+                        }).catch((err) => {
+                          // Thông báo lỗi nếu có vấn đề
+                          Alert.alert("Error", "Unable to open map: " + err.message);
+                        });
+                      }}
+                  >
+                    <Text style={styles.buttonText}>Chỉ đường</Text>
+                  </TouchableOpacity>
+                </>
               ) : (
                 <Text>Unable to load map. Location not available.</Text>
               )}
@@ -321,6 +343,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     fontSize: 18,
+    marginTop: 10,
   },
   noDataContainer: {
     alignItems: "center",
@@ -342,6 +365,19 @@ const styles = StyleSheet.create({
       width: '100%',
       height: '100%',
     },
+    directionsButton: {
+        marginTop: 10,
+        padding: 10,
+        backgroundColor: '#007bff',
+        borderRadius: 5,
+        alignItems: 'center',
+        marginBottom: 10,
+      },
+      buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        marginBottom: 10,
+      },
 });
 
 export default DoctorDetailsScreen;
