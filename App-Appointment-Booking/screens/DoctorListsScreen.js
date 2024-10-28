@@ -3,184 +3,62 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
+  TouchableOpacity,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import DoctorCard from "../components/DoctorCard";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import axios from 'axios';
+import { Picker } from '@react-native-picker/picker';
+
 const DoctorListsScreen = () => {
-  const [searchText, setSearchText] = useState(""); // State for the search input
+  const [searchText, setSearchText] = useState("");
+  const [clinicId, setClinic] = useState("");
+  const [specializationId, setSpecialization] = useState("");
   const [doctors, setDoctors] = useState([]);
-  const doctorsData = [
-    {
-      id: "1",
-      name: "Dr. John Doe",
-      categories: ["Cardiologist", "Internal Medicine"],
-      location: "New York",
-      experience: "10 years",
-      education: "MD, Cardiology",
-      languages: ["English", "Spanish"],
-      bio: "Dr. John Doe is an experienced cardiologist with a passion for helping patients improve their heart health. He has a strong educational background and is fluent in multiple languages.",
-      rating: 4.9,
-      reviews: 150,
-      photo:
-        "https://plus.unsplash.com/premium_photo-1681996484614-6afde0d53071?auto=format&fit=crop&q=80&w=2070&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    },
-    {
-      id: "2",
-      name: "Dr. Jane Smith",
-      categories: ["Dermatologist", "Allergist"],
-      location: "Los Angeles",
-      experience: "8 years",
-      education: "MD, Dermatology",
-      languages: ["English", "French"],
-      bio: "Dr. Jane Smith specializes in dermatology and allergology. She is known for her compassionate care and expertise in treating skin conditions and allergies.",
-      rating: 4.8,
-      reviews: 120,
-      photo:
-        "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=2070&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    },
-    {
-      id: "3",
-      name: "Dr. David Johnson",
-      categories: ["Pediatrician"],
-      location: "Chicago",
-      experience: "12 years",
-      education: "MD, Pediatrics",
-      languages: ["English"],
-      bio: "Dr. David Johnson is a dedicated pediatrician with over a decade of experience. He provides comprehensive care for children from infancy to adolescence.",
-      rating: 4.7,
-      reviews: 100,
-      photo:
-        "https://images.unsplash.com/photo-1612349316228-5942a9b489c2?auto=format&fit=crop&q=80&w=2070&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    },
-    {
-      id: "4",
-      name: "Dr. Lisa Brown",
-      categories: ["Orthopedic Surgeon"],
-      location: "San Francisco",
-      experience: "15 years",
-      education: "MD, Orthopedic Surgery",
-      languages: ["English", "Spanish"],
-      bio: "Dr. Lisa Brown is a skilled orthopedic surgeon specializing in joint and bone-related surgeries. She is committed to helping patients regain mobility and strength.",
-      rating: 4.9,
-      reviews: 140,
-      photo:
-        "https://images.unsplash.com/photo-1484863137850-59afcfe05386?auto=format&fit=crop&q=80&w=2071&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    },
-    {
-      id: "5",
-      name: "Dr. Maria Garcia",
-      categories: ["Gynecologist", "Obstetrician"],
-      location: "Miami",
-      experience: "9 years",
-      education: "MD, Obstetrics and Gynecology",
-      languages: ["English", "Spanish"],
-      bio: "Dr. Maria Garcia provides comprehensive women's health services with a focus on gynecological and obstetric care. She is dedicated to ensuring the well-being of her patients.",
-      rating: 4.7,
-      reviews: 110,
-      photo:
-        "https://cdn.pixabay.com/photo/2017/01/29/21/16/nurse-2019420_1280.jpg",
-    },
-    {
-      id: "6",
-      name: "Dr. Robert White",
-      categories: ["Orthodontist"],
-      location: "Chicago",
-      experience: "30 years",
-      education: "DMD, Orthodontics",
-      languages: ["English"],
-      bio: "Dr. Robert White is an orthodontist who specializes in straightening teeth and correcting bites. He is known for creating beautiful smiles for his patients.",
-      rating: 4.8,
-      reviews: 130,
-      photo:
-        "https://cdn.pixabay.com/photo/2017/05/23/17/12/doctor-2337835_1280.jpg",
-    },
-    {
-      id: "7",
-      name: "Dr. Sarah Adams",
-      categories: ["Ophthalmologist"],
-      location: "Los Angeles",
-      experience: "14 years",
-      education: "MD, Ophthalmology",
-      languages: ["English", "Spanish"],
-      bio: "Dr. Sarah Adams is an ophthalmologist with expertise in eye care and surgeries. She is dedicated to preserving and improving patients' vision.",
-      rating: 4.9,
-      reviews: 160,
-      photo:
-        "https://cdn.pixabay.com/photo/2017/03/14/03/20/woman-2141808_1280.jpg",
-    },
-    {
-      id: "8",
-      name: "Dr. Michael Wilson",
-      categories: ["Neurologist"],
-      location: "San Francisco",
-      experience: "13 years",
-      education: "MD, Neurology",
-      languages: ["English"],
-      bio: "Dr. Michael Wilson specializes in neurology and the treatment of disorders of the nervous system. He is committed to improving patients' neurological health.",
-      rating: 4.8,
-      reviews: 140,
-      photo:
-        "https://cdn.pixabay.com/photo/2015/05/26/09/05/doctor-784329_1280.png",
-    },
-    {
-      id: "9",
-      name: "Dr. Laura Taylor",
-      categories: ["Psychiatrist"],
-      location: "New York",
-      experience: "9 years",
-      education: "MD, Psychiatry",
-      languages: ["English", "French"],
-      bio: "Dr. Laura Taylor provides psychiatric care with a focus on mental health and well-being. She is known for her empathetic approach to patient care.",
-      rating: 4.7,
-      reviews: 120,
-      photo:
-        "https://cdn.pixabay.com/photo/2016/02/10/13/03/dentist-1191671_1280.jpg",
-    },
-    {
-      id: "10",
-      name: "Dr. Alex Turner",
-      categories: ["Dentist", "Oral Surgeon"],
-      location: "Miami",
-      experience: "10 years",
-      education: "DMD, Dentistry",
-      languages: ["English", "Spanish"],
-      bio: "Dr. Alex Turner is a dentist and oral surgeon, specializing in oral health and surgical procedures. He is dedicated to providing top-notch dental care to his patients.",
-      rating: 4.8,
-      reviews: 130,
-      photo:
-        "https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&q=80&w=2071&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    },
-    // Add more doctor data as needed
-  ];
+  const [clinics, setClinics] = useState([]);
+  const [specializations, setSpecializations] = useState([]);
 
-  // Generate categories from the unique categories found in doctorsData
-  const categories = Array.from(
-    new Set(doctorsData.flatMap((doctor) => doctor.categories))
-  );
+  // Fetch clinics and specializations options when component mounts
   useEffect(() => {
-        const fetchDoctors = async () => {
-          try {
-            const response = await axios.get("http://10.0.2.2:8080/api/get-list-doctor");
-            setDoctors(response.data.doctors);
-          } catch (err) {
-            console.log(err);
-            setError(err.message);
-          } finally {
-            setLoading(false);
-          }
-        };
+    const fetchFilters = async () => {
+      try {
+        const clinicsResponse = await axios.get("http://10.0.2.2:8080/api/clinic/get-list-clinics");
+        setClinics(clinicsResponse.data.clinics);
 
-        fetchDoctors();
-      }, []);
+        const specializationsResponse = await axios.get("http://10.0.2.2:8080/api/specialization/get-list-specialization");
+        setSpecializations(specializationsResponse.data.specializations);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchFilters();
+    handleSearch();
+  }, []);
+
+  // Fetch doctors based on filter when search button is clicked
+  const handleSearch = async () => {
+    try {
+      const response = await axios.get("http://10.0.2.2:8080/api/get-list-doctor-filter", {
+        params: {
+          searchText,
+          clinicId,
+          specializationId,
+        },
+      });
+      setDoctors(response.data.doctors);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
-        {/* Search Input with Search Icon */}
+        {/* Search Input */}
         <View style={styles.searchInputContainer}>
           <Feather
             name="search"
@@ -196,18 +74,53 @@ const DoctorListsScreen = () => {
           />
         </View>
 
-        {/* Category Menu (Horizontal Scroll)
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryMenu}
+        {/* Clinic Picker */}
+        <Picker
+          selectedValue={clinicId}
+          onValueChange={(value) => {
+            console.log("Selected Clinic:", value);
+            setClinic(value); // Cập nhật trực tiếp giá trị của clinicId
+          }}
+          style={styles.picker}
+          mode="dropdown"
         >
-          {categories.map((category, index) => (
-            <TouchableOpacity key={index} style={styles.categoryButton}>
-              <Text style={styles.categoryButtonText}>{category}</Text>
-            </TouchableOpacity>
+          <Picker.Item label="Chọn phòng khám" value="" />
+          {clinics.map((clinic) => (
+            <Picker.Item key={clinic.id} label={clinic.name} value={clinic.id} />
           ))}
-        </ScrollView>*/}
+        </Picker>
+
+        {/* Specialization Picker */}
+        <Picker
+          selectedValue={specializationId}
+          onValueChange={(value) => {
+            console.log("Selected Specialization:", value);
+            setSpecialization(value); // Cập nhật trực tiếp giá trị của specializationId
+          }}
+          style={styles.picker}
+          mode="dropdown"
+        >
+          <Picker.Item label="Chọn chuyên khoa" value="" />
+          {specializations.map((spec) => (
+            <Picker.Item key={spec.id} label={spec.name} value={spec.id} />
+          ))}
+        </Picker>
+
+        {/* Reset Button */}
+        <TouchableOpacity
+          style={styles.resetButton}
+          onPress={() => {
+            setClinic(""); // Reset clinicId
+            setSpecialization(""); // Reset specializationId
+            setSearchText(""); // Reset search text nếu cần
+          }}>
+          <Text style={styles.resetButtonText}>Bỏ chọn</Text>
+        </TouchableOpacity>
+
+        {/* Search Button */}
+        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+          <Text style={styles.searchButtonText}>Tìm kiếm</Text>
+        </TouchableOpacity>
 
         <Text style={styles.title}>Tất cả bác sĩ</Text>
         <ScrollView
@@ -258,19 +171,34 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
   },
-  categoryMenu: {
-    marginTop: 10,
-    height: 60, // Increase the height of the category menu
+  picker: {
+    marginVertical: 10,
+    height: 50,
+    backgroundColor: "#f5f5f5",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
   },
-  categoryButton: {
+  searchButton: {
     backgroundColor: "#00b894",
     padding: 10,
     borderRadius: 10,
-    marginRight: 10,
-    height: 40, // Increase the height of the category buttons
+    alignItems: "center",
+    marginVertical: 10,
   },
-  categoryButtonText: {
-    color: "white",
+  searchButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  resetButton: {
+    backgroundColor: "#ff4757",
+    padding: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    marginVertical: 10,
+  },
+  resetButtonText: {
+    color: "#fff",
     fontWeight: "bold",
   },
 });

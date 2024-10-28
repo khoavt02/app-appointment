@@ -65,8 +65,8 @@ const DoctorsList = () => {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ flexDirection: "row" }}>
               {doctors.map((item, index) => renderDoctorCard({ item }))}
-              <TouchableOpacity style={styles.showMoreButton}>
-                <Text style={styles.showMoreButtonText}>Show all Doctors </Text>
+              <TouchableOpacity style={styles.showMoreButton} onPress={() => navigation.navigate('DoctorLists')}>
+                <Text style={styles.showMoreButtonText}>Xem tất cả </Text>
                 <FontAwesome name="arrow-right" size={15} color="#fff" />
               </TouchableOpacity>
             </View>

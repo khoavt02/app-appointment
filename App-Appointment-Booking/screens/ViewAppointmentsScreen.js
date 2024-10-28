@@ -1,11 +1,15 @@
-import React, {useState, useEffect} from 'react';
-import { View, Text, FlatList, StyleSheet, TextInput, Button, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, FlatList, StyleSheet, TextInput, Button, ActivityIndicator, Modal, TouchableOpacity } from 'react-native';
 import axios from 'axios';
+
 const ViewAppointmentsScreen = () => {
   const [patientBookings, setPatientBookings] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
-  // Dữ liệu giả từ JSON của bạn
+  const [selectedExam, setSelectedExam] = useState(null); // Để lưu kết quả chi tiết khám
+  const [modalVisible, setModalVisible] = useState(false); // Quản lý trạng thái modal
+
+  // Lấy danh sách các lần đặt lịch
   const fetchPatientBookings = async () => {
     setLoading(true);
     try {
@@ -24,19 +28,40 @@ const ViewAppointmentsScreen = () => {
     }
   };
 
+  // Hàm lấy chi tiết kết quả khám từ API
+  const fetchExamDetails = async (patientId, dateBooking, timeBooking) => {
+    try {
+      const response = await axios.get(`http://10.0.2.2:8080/api/get-detail-patient-exam`, {
+        params: {
+          patientId,
+          dateBooking,
+          timeBooking,
+        },
+      });
+      if (response.status === 200) {
+        setSelectedExam(response.data); // Lưu kết quả khám vào state
+        setModalVisible(true); // Hiển thị modal
+      } else {
+        alert('Không tìm thấy chi tiết kết quả khám.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Đã xảy ra lỗi khi lấy chi tiết kết quả khám.');
+    }
+  };
+
   // Hàm render cho mỗi mục trong danh sách
   const renderItem = ({ item }) => {
-    // Xác định trạng thái dựa trên statusId
     let statusColor, statusText;
 
     if (item.statusId === 1) {
-      statusColor = '#27ae60';  // Màu cho 'Đã xác nhận'
+      statusColor = '#27ae60';
       statusText = 'Đã xác nhận';
     } else if (item.statusId === 2) {
-      statusColor = '#e74c3c';  // Màu cho 'Đã hủy'
+      statusColor = '#e74c3c';
       statusText = 'Đã hủy';
     } else {
-      statusColor = '#e67e22';  // Màu cho 'Chờ xác nhận'
+      statusColor = '#e67e22';
       statusText = 'Chờ xác nhận';
     }
 
@@ -47,9 +72,15 @@ const ViewAppointmentsScreen = () => {
         <Text style={styles.timeBooking}>Thời gian: {item.timeBooking}</Text>
         <Text style={styles.doctorName}>Bác sĩ: {item.User.name}</Text>
         <Text style={styles.address}>Địa chỉ: {item.User.address}</Text>
-        <Text style={[styles.status, { color: statusColor }]}>
-          Trạng thái: {statusText}
-        </Text>
+        <Text style={[styles.status, { color: statusColor }]}>Trạng thái: {statusText}</Text>
+
+        {/* Nút "Xem kết quả" */}
+        <TouchableOpacity
+          style={styles.resultButton}
+          onPress={() => fetchExamDetails(item.patientId, item.dateBooking, item.timeBooking)}
+        >
+          <Text style={styles.resultButtonText}>Xem kết quả</Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -62,7 +93,7 @@ const ViewAppointmentsScreen = () => {
         value={searchText}
         onChangeText={(text) => setSearchText(text)}
       />
-      <Button color="#00b894" style={styles.searchButton} title="Tìm kiếm" onPress={fetchPatientBookings} />
+      <Button color="#00b894" title="Tìm kiếm" onPress={fetchPatientBookings} />
 
       {loading ? (
         <ActivityIndicator size="large" color="#0000ff" />
@@ -74,6 +105,32 @@ const ViewAppointmentsScreen = () => {
           contentContainerStyle={styles.list}
         />
       )}
+
+      {/* Modal hiển thị chi tiết kết quả khám */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {selectedExam ? (
+              <>
+                <Text style={styles.modalTitle}>Chi tiết kết quả khám</Text>
+                <Text style={styles.modalText}>Ngày hẹn: {selectedExam.dateBooking}</Text>
+                <Text style={styles.modalText}>Thời gian: {selectedExam.timeBooking}</Text>
+                <Text style={styles.modalText}>Kết quả khám: {selectedExam.exam}</Text>
+                <Text style={styles.modalText}>Đơn thuốc: {selectedExam.prescription}</Text>
+                <Text style={styles.modalText}>Ghi chú: {selectedExam.content || 'Không có ghi chú'}</Text>
+                <Button title="Đóng" onPress={() => setModalVisible(false)} />
+              </>
+            ) : (
+              <Text>Không có dữ liệu.</Text>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -138,7 +195,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  resultButton: {
+    backgroundColor: '#3498db',
+    padding: 10,
+    marginTop: 10,
+    borderRadius: 5,
+  },
+  resultButtonText: {
+    color: '#fff',
+    textAlign: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
 });
 
 export default ViewAppointmentsScreen;
-
