@@ -9,6 +9,11 @@ const ViewAppointmentsScreen = () => {
   const [selectedExam, setSelectedExam] = useState(null); // Để lưu kết quả chi tiết khám
   const [modalVisible, setModalVisible] = useState(false); // Quản lý trạng thái modal
 
+  const [feedbackModalVisible, setFeedbackModalVisible] = useState(false); // Quản lý trạng thái của modal đánh giá
+  const [feedbackName, setFeedbackName] = useState(''); // Tên người đánh giá
+  const [feedbackPhone, setFeedbackPhone] = useState(''); // Số điện thoại người đánh giá
+  const [feedbackContent, setFeedbackContent] = useState(''); // Nội dung đánh giá
+  const [selectedBooking, setSelectedBooking] = useState(null);
   // Lấy danh sách các lần đặt lịch
   const fetchPatientBookings = async () => {
     setLoading(true);
@@ -49,7 +54,45 @@ const ViewAppointmentsScreen = () => {
       alert('Đã xảy ra lỗi khi lấy chi tiết kết quả khám.');
     }
   };
+  const submitFeedback = async () => {
+    if (!feedbackPhone || !feedbackContent) {
+      alert('Vui lòng nhập đầy đủ thông tin.');
+      return;
+    }
 
+    try {
+      const payload = {
+        data: {
+          doctorId: selectedBooking.User.id, // Lấy doctorId từ booking hiện tại
+          dateBooking: selectedBooking.dateBooking,
+          timeBooking: selectedBooking.timeBooking,
+          feedbackContent: feedbackContent,
+          name: selectedBooking.name,
+          feedbackPhone: feedbackPhone,
+        },
+      };
+
+      const response = await axios.post('http://10.0.2.2:8080/feedback/create', payload, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 200) {
+        alert('Đánh giá của bạn đã được gửi.');
+        setFeedbackModalVisible(false); // Đóng modal sau khi gửi đánh giá
+        // Reset input
+        //setFeedbackName('');
+        setFeedbackPhone('');
+        setFeedbackContent('');
+      } else {
+        alert('Đã xảy ra lỗi khi gửi đánh giá.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Đã xảy ra lỗi trong quá trình gửi đánh giá.');
+    }
+  };
   // Hàm render cho mỗi mục trong danh sách
   const renderItem = ({ item }) => {
     let statusColor, statusText;
@@ -75,12 +118,27 @@ const ViewAppointmentsScreen = () => {
         <Text style={[styles.status, { color: statusColor }]}>Trạng thái: {statusText}</Text>
 
         {/* Nút "Xem kết quả" */}
-        <TouchableOpacity
-          style={styles.resultButton}
-          onPress={() => fetchExamDetails(item.patientId, item.dateBooking, item.timeBooking)}
-        >
-          <Text style={styles.resultButtonText}>Xem kết quả</Text>
-        </TouchableOpacity>
+         {item.statusId === 1 && (
+            <>
+            <TouchableOpacity
+                          style={styles.resultButton}
+                          onPress={() => fetchExamDetails(item.patientId, item.dateBooking, item.timeBooking)}
+                        >
+                          <Text style={styles.resultButtonText}>Xem kết quả</Text>
+                        </TouchableOpacity>
+                        {/* Nút "Đánh giá" */}
+                        <TouchableOpacity
+                          style={[styles.resultButton, { backgroundColor: '#e67e22', marginTop: 10 }]}
+                          onPress={() => {
+                            setSelectedBooking(item);
+                            setFeedbackModalVisible(true);
+                          }}
+                        >
+                          <Text style={styles.resultButtonText}>Đánh giá</Text>
+                        </TouchableOpacity>
+           </>
+           )}
+
       </View>
     );
   };
@@ -128,6 +186,35 @@ const ViewAppointmentsScreen = () => {
             ) : (
               <Text>Không có dữ liệu.</Text>
             )}
+          </View>
+        </View>
+      </Modal>
+      {/* Modal hiển thị form đánh giá */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={feedbackModalVisible}
+        onRequestClose={() => setFeedbackModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Đánh giá</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Số điện thoại"
+              value={feedbackPhone}
+              onChangeText={(text) => setFeedbackPhone(text)}
+              keyboardType="phone-pad"
+            />
+            <TextInput
+              style={[styles.modalInput, { height: 100 }]}
+              placeholder="Nội dung đánh giá"
+              value={feedbackContent}
+              onChangeText={(text) => setFeedbackContent(text)}
+              multiline={true}
+            />
+            <Button title="Gửi đánh giá" color="#27ae60" onPress={submitFeedback} />
+            <Button title="Hủy" color="#c0392b" onPress={() => setFeedbackModalVisible(false)} />
           </View>
         </View>
       </Modal>
@@ -225,6 +312,14 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: 16,
     marginBottom: 10,
+  },
+  modalInput: {
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingLeft: 8,
+    borderRadius: 5,
   },
 });
 
