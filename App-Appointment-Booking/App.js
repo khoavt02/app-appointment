@@ -7,12 +7,12 @@ import OnboardingNavigation from "./components/OnboardingNavigation";
 import { AuthProvider } from "./AuthContext";
 
 export default function App() {
-  const [userAuthenticated, setUserAuthenticated] = useState(true);
+  const [userAuthenticated, setUserAuthenticated] = useState(false);
 
   // Function to update authentication state after successful login or signup
-  //  const updateAuthentication = (authenticated) => {
-  //    setUserAuthenticated(authenticated);
-  //  };
+    const updateAuthentication = (authenticated) => {
+      setUserAuthenticated(authenticated);
+    };
 
   return (
     <SafeAreaProvider>

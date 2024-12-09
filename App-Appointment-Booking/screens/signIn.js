@@ -43,7 +43,7 @@ const SignIn = () => {
   };
 
   const apiEndpoint =
-    "https://60e1-2409-4088-ae8d-1ce-4a8d-684c-10e6-3d84.ngrok.io/api/auth/signin";
+    "http://10.0.2.2:8080/api/login";
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -59,30 +59,30 @@ const SignIn = () => {
 
     setLoading(true);
     setError(""); // Clear any previous error message
-    updateAuthentication(true);
-    navigation.navigate("Home");
+    //updateAuthentication(true);
+    //navigation.navigate("Home");
 
-//    try {
-//      const response = await axios.post(apiEndpoint, {
-//        email,
-//        password,
-//      });
-//
-//      if (response.status === 200) {
-//        // Login successful
-//        Alert.alert("Success", "Login successful!");
-//        updateAuthentication(true); // Update authentication state
-//        // Explicitly navigate to the "Home" screen
-//        navigation.navigate("Home");
-//      } else {
-//        setError("Email or password is incorrect.");
-//      }
-//    } catch (error) {
-//      setError("Login failed. Please check your connection.");
-//      console.log(error);
-//    } finally {
-//      setLoading(false);
-//    }
+    try {
+      const response = await axios.post(apiEndpoint, {
+        email,
+        password,
+      });
+
+     if (response.status === 200) {
+      // Login successful
+        Alert.alert("Success", "Login successful!");
+        updateAuthentication(true);
+        navigation.navigate("Main");
+        //navigation.navigate("Home");
+      } else {
+        setError("Email or password is incorrect.");
+      }
+    } catch (error) {
+      setError("Login failed. Please check your connection.");
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

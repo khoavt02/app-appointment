@@ -2,6 +2,7 @@ import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import SignupScreen from "../screens/SignupScreen";
 import SigninScreen from "../screens/signIn";
+import AppNavigation from "../components/AppNavigation";
 import { useAuth } from "../AuthContext"; // Import the useAuth hook
 
 const Stack = createStackNavigator();
@@ -20,8 +21,13 @@ const OnboardingNavigation = () => {
         name="Signin"
         component={SigninScreen}
         options={{ headerShown: false }}
-        initialParams={{ updateAuthentication }} // Pass the updateAuthentication function as a parameter
+        //initialParams={{ updateAuthentication }} // Pass the updateAuthentication function as a parameter
       />
+      <Stack.Screen
+          name="Main"
+          component={AppNavigation}
+          options={{ headerShown: false }}
+        />
     </Stack.Navigator>
   );
 };
