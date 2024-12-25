@@ -5,6 +5,8 @@ import RadioButton from '../components/RadioButton';
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import axios from 'axios';
+import AuthTokenService from '../AuthTokenService';
+import jwtDecode from 'jwt-decode';
 const AppointmentBookingScreen = ({route}) => {
      const { doctor } = route.params ?? {};
      const [selectedDay, setSelectedDay] = useState(new Date());
@@ -59,8 +61,33 @@ const AppointmentBookingScreen = ({route}) => {
          setDatePickerVisibility(true);
        };
     useEffect(() => {
+         const fetchAndParseToken = async () => {
+              const token = await AuthTokenService.getToken();
+              console.log('Token:', token);
+
+              if (token) {
+                   const userInfo = AuthTokenService.decodeTokenManually(token);
+                   console.log(userInfo);
+                   setPatientName(userInfo.name);
+                   setPhoneNumber(userInfo.phone);
+                   setGender(userInfo.gender);
+                   setAddress(userInfo.address);
+                   setEmail(userInfo.email)
+              } else {
+                console.warn('No token found.');
+              }
+            };
+
+            fetchAndParseToken();
         getDoctorSchedule(new Date());
       }, [doctor]);
+  function base64UrlDecode(base64Url) {
+    let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4 !== 0) {
+      base64 += '=';
+    }
+    return atob(base64);
+  }
   const validateInput = () => {
           console.log(selectedSlot);
           if(selectedSlot === null){
@@ -206,14 +233,7 @@ const AppointmentBookingScreen = ({route}) => {
                    keyboardType="email-address"
                />
 
-               <Text style={styles.label}>Năm sinh</Text>
-               <TextInput
-                   placeholder="Nhập năm sinh"
-                   style={styles.input}
-                   value={birthYear}
-                   onChangeText={setBirthYear}
-                   keyboardType="numeric"
-               />
+
 
                <Text style={styles.label}>Địa chỉ</Text>
                <TextInput
@@ -221,6 +241,15 @@ const AppointmentBookingScreen = ({route}) => {
                    style={styles.input}
                    value={address}
                    onChangeText={setAddress}
+               />
+
+               <Text style={styles.label}>Năm sinh</Text>
+               <TextInput
+                   placeholder="Nhập năm sinh"
+                   style={styles.input}
+                   value={birthYear}
+                   onChangeText={setBirthYear}
+                   keyboardType="numeric"
                />
 
                <Text style={styles.label}>Lý do khám</Text>

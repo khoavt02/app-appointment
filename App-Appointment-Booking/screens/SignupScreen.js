@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,328 +8,300 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Modal,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import Icon from "react-native-vector-icons/FontAwesome"; // You can use other icons if preferred
+import Icon from "react-native-vector-icons/FontAwesome";
 import CustomButton from "../components/CustomButton";
-
-import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
-import { BlurView } from "expo-blur";
-
-const SignupScreen = () => {
+import axios from "axios";
+import {Picker} from "@react-native-picker/picker"
+const SignUp = () => {
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [dob, setDob] = useState("");
-  const [mobileNumber, setMobileNumber] = useState("");
-  const [accountType, setAccountType] = useState("patient");
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [chosenDate, setChosenDate] = useState(new Date());
-
+  const [otp, setOtp] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [step, setStep] = useState(1); // 1: Registration, 2: OTP Verification
+  const [gender, setGender] = useState("male");
   const navigation = useNavigation();
-
-  const apiEndpoint =
-    " https://60e1-2409-4088-ae8d-1ce-4a8d-684c-10e6-3d84.ngrok.io/api/auth/signup";
-
-  const handleGoToSignin = () => {
-    navigation.navigate("Signin");
-  };
-
-  const showDatepicker = () => {
-    setShowDatePicker(true);
-  };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-  // Additional doctor-specific fields
-  const [specialty, setSpecialty] = useState("");
-  const [licenseNumber, setLicenseNumber] = useState("");
+  const validateEmail = (email) => {
+    const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
+    return emailRegex.test(email);
+  };
 
-  const [isLoading, setIsLoading] = useState(false);
+  const apiRegisterEndpoint = "http://10.0.2.2:8080/api/register";
+  const apiVerifyOtpEndpoint = "http://10.0.2.2:8080/api/mail-verifycation";
 
-  const handleSignup = async () => {
+  const handleSignUp = async () => {
+    if (!name || !phone || !address || !email || !password || !confirmPassword || !otp) {
+      setError("Vui lòng nhập đầy đủ thông tin.");
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setError("Vui lòng nhập email đúng định dạng.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Xác nhận mật khẩu không khớp.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
     try {
-      setIsLoading(true); // Start loading
-
-      // Perform validation
-      if (
-        !name ||
-        !email ||
-        !password ||
-        !confirmPassword ||
-        !dob ||
-        !mobileNumber
-      ) {
-        Alert.alert("Error", "All fields are required.");
-        throw new Error("All fields are required.");
-      }
-
-      if (password !== confirmPassword) {
-        Alert.alert("Error", "Passwords do not match.");
-        throw new Error("Passwords do not match.");
-      }
-
-      if (!acceptTerms) {
-        Alert.alert("Error", "You must accept the terms and conditions.");
-        throw new Error("You must accept the terms and conditions.");
-      }
-
-      // Create a payload object with common fields
-      const payload = {
+      // Dữ liệu gửi lên API
+      const requestData = {
         name,
+        phone,
+        address,
         email,
         password,
-        dob,
-        mobileNumber,
-        accountType,
-        acceptTerms,
+        otpCode: otp, // Đổi tên để khớp với API
+        gender: "male", // Bạn có thể thay đổi giá trị này từ form
+        description: "", // Thêm mô tả nếu cần
+        roleId: 4, // Ví dụ: 2 là vai trò người dùng bình thường
+        isActive: 1, // Mặc định là active
       };
 
-      // Conditionally add doctor-related fields when the accountType is "doctor"
-      if (accountType === "doctor") {
-        payload.specialty = specialty;
-        payload.licenseNumber = licenseNumber;
-      }
-
-      // Make an API call to register the user
-      const response = await axios.post(apiEndpoint, payload);
+      const response = await axios.post(apiRegisterEndpoint, requestData);
 
       if (response.status === 201) {
-        // Clear all the input fields
-        setName("");
-        setEmail("");
-        setPassword("");
-        setConfirmPassword("");
-        setDob("");
-        setMobileNumber("");
-        setAccountType("patient"); // You can set it to the default value
-        setSpecialty("");
-        setLicenseNumber("");
-        setAcceptTerms(false);
-
-        // Registration successful
-        Alert.alert("Success", "Account created successfully!");
-        navigation.navigate("Home")
+        Alert.alert("Thành công", "Đăng kí thành công.");
+        //setStep(2); // Chuyển bước tiếp theo nếu có
       } else {
-        throw new Error("Registration failed");
+        // Hiển thị thông báo lỗi nếu không tạo được tài khoản
+        setError(response.data.message || "Đăng kí thất bại. Vui lòng thử lại.");
       }
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (error.response) {
-          if (
-            error.response.status === 400 &&
-            error.response.data.message === "Email is already in use."
-          ) {
-            // Handle duplicate email error
-            Alert.alert("Error", "This email address is already in use.");
-          } else {
-            console.error(
-              "Server Error:",
-              error.response.status,
-              error.response.data
-            );
-            Alert.alert("Error", "Registration failed. Please try again.");
-          }
-        } else {
-          console.error("Network Error:", error.message);
-          Alert.alert("Network Error", "Please check your connection.");
-        }
+      // Xử lý lỗi từ server
+      if (error.response) {
+        setError(error.response.data.message || "Đăng kí thất bại. Vui lòng kiểm tra lại.");
       } else {
-        console.error("Request Error:", error.message);
-        // Handle other errors
+        setError("Đăng kí thất bại. Vui lòng kiểm tra lại kết nối.");
       }
+      console.log(error);
     } finally {
-      setIsLoading(false); // Stop loading
+      setLoading(false);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    if (!email) {
+      setError("Vui lòng nhập mã email.");
+      return;
+    }
+
+    try {
+      // Logic to send OTP goes here (API call)
+      const response = await axios.post(apiVerifyOtpEndpoint, {
+          email
+      });
+      if (response.status == 200){
+        Alert.alert("Thành công", "OTP đã được gửi đến email của bạn và có hiệu lực trong vòng 10 phút.");
+      }else{
+        Alert.alert("Lỗi","Có lỗi xảy ra. Vui lòng thử lại!")
+      }
+    } catch (error) {
+      setError("Gửi mã OTP thất bại. Vui lòng thử lại.");
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp) {
+      setError("Vui lòng nhập mã OTP đã được gửi đến mail của bạn.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await axios.post(apiVerifyOtpEndpoint, {
+        email,
+        otp,
+      });
+
+      if (response.status === 200) {
+        Alert.alert("Thành công", "Xác nhận thành công!");
+        navigation.navigate("SignIn");
+      } else {
+        setError("Mã OTP không đúng. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      setError("Xác nhận mã OTP thất bại. Vui lòng kiểm tra lại.");
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#56428F" }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : null}
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -150}
       >
         <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.title}>Sign Up</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Name"
-            value={name}
-            onChangeText={(text) => setName(text)}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={(text) => setEmail(text)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.passwordInput}
-              onChangeText={(text) => setPassword(text)}
-              value={password}
-              placeholder="Password"
-              secureTextEntry={!showPassword}
-            />
-            <TouchableOpacity
-              style={styles.passwordVisibilityButton}
-              onPress={togglePasswordVisibility}
-            >
-              <Icon
-                name={showPassword ? "eye" : "eye-slash"}
-                size={20}
-                color="gray"
-              />
-            </TouchableOpacity>
-          </View>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChangeText={(text) => setConfirmPassword(text)}
-            secureTextEntry
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Date of Birth"
-            value={dob} // Use the dob state to display the selected date
-            onFocus={showDatepicker} // Show the date picker when the input is focused
-          />
-          {showDatePicker && (
-            <DateTimePicker
-              testID="dateTimePicker"
-              value={chosenDate}
-              mode="date"
-              is24Hour={true}
-              display="default"
-              onChange={(event, selectedDate) => {
-                setShowDatePicker(false); // Close the date picker
-                if (selectedDate) {
-                  setChosenDate(selectedDate);
-                  setDob(selectedDate.toDateString()); // Set the selected date to the dob state
-                }
-              }}
-            />
-          )}
-
-          <TextInput
-            style={styles.input}
-            placeholder="Mobile Number*"
-            value={mobileNumber}
-            keyboardType="numeric"
-            onChangeText={(text) => {
-              const numericInput = text.replace(/[^0-9]/g, "");
-
-              // Limit the input to 10 characters
-              if (numericInput.length <= 10) {
-                setMobileNumber(numericInput);
-              } else {
-                Alert.alert("Error", "Mobile number must be 10 digits.");
-              }
-            }}
-          />
-          <Text style={styles.label}>Select Account Type:</Text>
-          <View style={styles.radioButtons}>
-            <TouchableOpacity
-              style={[
-                styles.radioButton,
-                accountType === "patient" ? styles.radioButtonSelected : null,
-              ]}
-              onPress={() => setAccountType("patient")}
-            >
-              <Text
-                style={[
-                  styles.radioButtonText,
-                  accountType === "patient" ? styles.radioButtonTextSelected : null,
-                ]}
-              >
-                Patient
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.radioButton,
-                accountType === "doctor" ? styles.radioButtonSelected : null,
-              ]}
-              onPress={() => setAccountType("doctor")}
-            >
-              <Text
-                style={[
-                  styles.radioButtonText,
-                  accountType === "doctor" ? styles.radioButtonTextSelected : null,
-                ]}
-              >
-                Doctor
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-
-          {/* Doctor-specific fields */}
-          {accountType === "doctor" && (
+          {step === 1 && (
             <>
+              <Text style={styles.title}>Đăng ký tài khoản</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Specialty"
-                value={specialty}
-                onChangeText={(text) => setSpecialty(text)}
+                placeholder="Họ và tên"
+                value={name}
+                onChangeText={(text) => setName(text)}
+              />
+              <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={gender}
+                    onValueChange={(value) => setGender(value)}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Nam" value="male" />
+                    <Picker.Item label="Nữ" value="female" />
+                    <Picker.Item label="Khác" value="other" />
+                  </Picker>
+                </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Điện thoại"
+                value={phone}
+                onChangeText={(text) => setPhone(text)}
+                keyboardType="phone-pad"
               />
               <TextInput
                 style={styles.input}
-                placeholder="License Number"
-                value={licenseNumber}
-                onChangeText={(text) => setLicenseNumber(text)}
+                placeholder="Địa chỉ"
+                value={address}
+                onChangeText={(text) => setAddress(text)}
+              />
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="Email"
+                  value={email}
+                  onChangeText={(text) => setEmail(text)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={handleSendOtp}
+                >
+                  <Text style={styles.buttonText}>Gửi OTP</Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                  style={styles.input}
+                  placeholder="Nhập OTP"
+                  value={otp}
+                  onChangeText={(text) => setOtp(text)}
+                  keyboardType="phone-pad"
+                />
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.passwordInput}
+                  onChangeText={(text) => setPassword(text)}
+                  value={password}
+                  placeholder="Mật khẩu"
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  style={styles.passwordVisibilityButton}
+                  onPress={togglePasswordVisibility}
+                >
+                  <Icon
+                    name={showPassword ? "eye" : "eye-slash"}
+                    size={20}
+                    color="gray"
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.passwordInput}
+                  onChangeText={(text) => setConfirmPassword(text)}
+                  value={confirmPassword}
+                  placeholder="Nhập lại mật khẩu"
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  style={styles.passwordVisibilityButton}
+                  onPress={togglePasswordVisibility}
+                >
+                  <Icon
+                    name={showPassword ? "eye" : "eye-slash"}
+                    size={20}
+                    color="gray"
+                  />
+                </TouchableOpacity>
+              </View>
+              <CustomButton
+                title={loading ? "Đang đăng ký..." : "Đăng ký"}
+                onPress={handleSignUp}
+                disabled={loading}
               />
             </>
           )}
 
-          <View style={styles.termsContainer}>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() => setAcceptTerms(!acceptTerms)}
-            >
-              {acceptTerms ? <Text style={styles.checkboxText}>✓</Text> : null}
-            </TouchableOpacity>
-            <Text style={styles.termsText}>
-              I accept the Terms and Conditions
-            </Text>
-          </View>
-          <CustomButton title={"Sign Up"} onPress={handleSignup} />
-          {isLoading && (
-            <Modal transparent={true} animationType="slide" visible={isLoading}>
-              <BlurView
-                intensity={100}
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  backgroundColor: "rgba(0, 184, 147, 0.103)",
-                }}
-              >
-                <ActivityIndicator size="large" color="#56428F" />
-              </BlurView>
-            </Modal>
+          {step === 2 && (
+            <>
+              <Text style={styles.title}>Verify OTP</Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="Enter OTP"
+                  value={otp}
+                  onChangeText={(text) => setOtp(text)}
+                  keyboardType="numeric"
+                />
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={handleSendOtp}
+                >
+                  <Text style={styles.buttonText}>Resend OTP</Text>
+                </TouchableOpacity>
+              </View>
+              <CustomButton
+                title={loading ? "Verifying..." : "Verify OTP"}
+                onPress={handleVerifyOtp}
+                disabled={loading}
+              />
+            </>
           )}
-          <TouchableOpacity onPress={handleGoToSignin} style={styles.link}>
-            <Text style={styles.linkText}>
-              Already have an account? Sign In
-            </Text>
-          </TouchableOpacity>
+
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#00b894" />
+            </View>
+          )}
+          {error !== "" && <Text style={styles.errorText}>{error}</Text>}
+
+          {step === 1 && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Signin")}
+              style={styles.link}
+            >
+              <Text style={styles.linkText}>
+                Bạn đã có tài khoản? Đăng nhập
+              </Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -358,6 +330,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     elevation: 5,
   },
+  button: {
+    backgroundColor: "#56428F",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 5,
+    marginLeft: 8,
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -370,58 +353,10 @@ const styles = StyleSheet.create({
   },
   passwordInput: {
     flex: 1,
-
     height: 40,
   },
   passwordVisibilityButton: {
     padding: 10,
-  },
-  label: {
-    fontSize: 16,
-    marginVertical: 12,
-  },
-  radioButtons: {
-    flexDirection: "row",
-    // justifyContent: "space-around",
-    gap: 16,
-    marginBottom: 16,
-  },
-  radioButton: {
-    padding: 8,
-    borderRadius: 4,
-  },
-  radioButtonSelected: {
-    backgroundColor: "#56428F",
-    elevation: 5,
-  },
-
-  radioButtonText: {
-    color: "#2d3436",
-    fontWeight: "bold",
-  },
-
-  radioButtonTextSelected: {
-    color: "#ffffff",
-  },
-  termsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 8,
-    marginVertical: 8,
-  },
-  checkboxText: {
-    fontWeight: "bold",
-  },
-  termsText: {
-    fontSize: 14,
   },
   link: {
     alignItems: "center",
@@ -431,6 +366,20 @@ const styles = StyleSheet.create({
     color: "#56428F",
     fontSize: 16,
   },
-});
+   errorText: {
+      color: "red",
+      fontSize: 14,
+      marginTop: 8,
+      textAlign: "center",
+    },
 
-export default SignupScreen;
+    picker: {
+      borderColor: "#ccc",
+      padding: 8,
+      marginVertical: 8,
+      borderRadius: 5,
+      backgroundColor: "#fff",
+      elevation: 5,
+    }
+  })
+  export default SignUp;

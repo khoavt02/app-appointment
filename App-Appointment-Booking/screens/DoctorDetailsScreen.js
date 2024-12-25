@@ -46,8 +46,8 @@ const DoctorDetailsScreen = ({ route }) => {
     if (doctor && doctor.clinicAddress) {
       const fetchInterval = setInterval(() => {
         if (!location) {
-          console.log("Retrying fetch coordinates...");
-          fetchCoordinates(doctor.clinicAddress);
+          //console.log("Retrying fetch coordinates...");
+          //fetchCoordinates(doctor.clinicAddress);
         } else {
           clearInterval(fetchInterval);
         }
@@ -55,7 +55,7 @@ const DoctorDetailsScreen = ({ route }) => {
 
       return () => clearInterval(fetchInterval);
     }
-  }, [doctor, location]);
+  }, [doctor]);
 
 
     const handleBooking = () => {

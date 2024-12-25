@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TextInput, Button, ActivityIndicator, Modal, TouchableOpacity } from 'react-native';
 import axios from 'axios';
+import AuthTokenService from '../AuthTokenService';
 
 const ViewAppointmentsScreen = () => {
   const [patientBookings, setPatientBookings] = useState([]);
@@ -14,6 +15,22 @@ const ViewAppointmentsScreen = () => {
   const [feedbackPhone, setFeedbackPhone] = useState(''); // Số điện thoại người đánh giá
   const [feedbackContent, setFeedbackContent] = useState(''); // Nội dung đánh giá
   const [selectedBooking, setSelectedBooking] = useState(null);
+  useEffect(() => {
+           const fetchAndParseToken = async () => {
+                const token = await AuthTokenService.getToken();
+                console.log('Token:', token);
+
+                if (token) {
+                     const userInfo = AuthTokenService.decodeTokenManually(token);
+                     setSearchText(userInfo.email);
+                } else {
+                  console.warn('No token found.');
+                }
+              };
+
+              fetchAndParseToken();
+              fetchPatientBookings();
+        },1);
   // Lấy danh sách các lần đặt lịch
   const fetchPatientBookings = async () => {
     setLoading(true);
@@ -151,7 +168,6 @@ const ViewAppointmentsScreen = () => {
         value={searchText}
         onChangeText={(text) => setSearchText(text)}
       />
-      <Button color="#00b894" title="Tìm kiếm" onPress={fetchPatientBookings} />
 
       {loading ? (
         <ActivityIndicator size="large" color="#0000ff" />

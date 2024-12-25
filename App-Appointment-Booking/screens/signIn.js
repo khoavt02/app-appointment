@@ -16,7 +16,7 @@ import CustomButton from "../components/CustomButton";
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import { useAuth } from "../AuthContext"; // Import the useAuth hook
-
+import AuthTokenService from '../AuthTokenService';
 const SignIn = () => {
   const { updateAuthentication } = useAuth(); // Access the updateAuthentication function from the AuthContext
   const [email, setEmail] = useState("");
@@ -47,13 +47,13 @@ const SignIn = () => {
 
   const handleSignIn = async () => {
     if (!email || !password) {
-      setError("All fields are required.");
+      setError("Vui lòng nhập đầy đủ email và mật khẩu.");
       return;
     }
 
     // Client-side email validation
     if (!validateEmail(email)) {
-      setError("Please enter a valid email address.");
+      setError("Email không đúng định dạng.");
       return;
     }
 
@@ -70,15 +70,20 @@ const SignIn = () => {
 
      if (response.status === 200) {
       // Login successful
-        Alert.alert("Success", "Login successful!");
+        console.log(response.data.token);
+        Alert.alert("Thành công", "Đăng nhập thành công!");
+        await AuthTokenService.saveToken(response.data.token);
         updateAuthentication(true);
         navigation.navigate("Main");
         //navigation.navigate("Home");
-      } else {
-        setError("Email or password is incorrect.");
+      } else if (response.status === 401) {
+        //setError("Email hoặc mật khẩu không đúng.");
+        Alert.alert("Thất bại", "Email hoặc mật khẩu không đúng.");
+      }else{
+        Alert.alert("Thất bại", "Email hoặc mật khẩu không đúng.");
       }
     } catch (error) {
-      setError("Login failed. Please check your connection.");
+      Alert.alert("Thất bại", "Email hoặc mật khẩu không đúng.");
       console.log(error);
     } finally {
       setLoading(false);
@@ -93,7 +98,7 @@ const SignIn = () => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -150}
       >
         <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.title}>Welcome</Text>
+          <Text style={styles.title}>Đăng nhập</Text>
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -107,7 +112,7 @@ const SignIn = () => {
               style={styles.passwordInput}
               onChangeText={(text) => setPassword(text)}
               value={password}
-              placeholder="Password"
+              placeholder="Nhập mật khẩu"
               secureTextEntry={!showPassword}
             />
             <TouchableOpacity
@@ -122,7 +127,7 @@ const SignIn = () => {
             </TouchableOpacity>
           </View>
           <CustomButton
-            title={loading ? "Signing In..." : "Sign In"}
+            title={loading ? "Đăng nhập..." : "Đăng nhập"}
             onPress={handleSignIn}
             disabled={loading}
           />
@@ -134,7 +139,7 @@ const SignIn = () => {
           {error !== "" && <Text style={styles.errorText}>{error}</Text>}
 
           <TouchableOpacity onPress={handleGoToSignup} style={styles.link}>
-            <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
+            <Text style={styles.linkText}>Bạn chưa có tài khoản? Đăng kí</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
