@@ -7,19 +7,21 @@ const ViewAppointmentsScreen = () => {
   const [patientBookings, setPatientBookings] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [tokenApi, setTokenApi] = useState('');
   const [selectedExam, setSelectedExam] = useState(null); // Để lưu kết quả chi tiết khám
   const [modalVisible, setModalVisible] = useState(false); // Quản lý trạng thái modal
-
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [feedbackModalVisible, setFeedbackModalVisible] = useState(false); // Quản lý trạng thái của modal đánh giá
   const [feedbackName, setFeedbackName] = useState(''); // Tên người đánh giá
   const [feedbackPhone, setFeedbackPhone] = useState(''); // Số điện thoại người đánh giá
   const [feedbackContent, setFeedbackContent] = useState(''); // Nội dung đánh giá
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [reasonCancelContent, setReasonCancelContent] = useState('');
   useEffect(() => {
            const fetchAndParseToken = async () => {
                 const token = await AuthTokenService.getToken();
                 console.log('Token:', token);
-
+                setTokenApi(token);
                 if (token) {
                      const userInfo = AuthTokenService.decodeTokenManually(token);
                      setSearchText(userInfo.email);
@@ -30,8 +32,7 @@ const ViewAppointmentsScreen = () => {
 
               fetchAndParseToken();
               fetchPatientBookings();
-        },1);
-  // Lấy danh sách các lần đặt lịch
+        },tokenApi);
   const fetchPatientBookings = async () => {
     setLoading(true);
     try {
@@ -110,6 +111,41 @@ const ViewAppointmentsScreen = () => {
       alert('Đã xảy ra lỗi trong quá trình gửi đánh giá.');
     }
   };
+
+  const submitCancel = async () => {
+      if (!reasonCancelContent) {
+        alert('Vui lòng nhập lý do hủy lịch khám.');
+        return;
+      }
+      console.log(selectedBooking);
+      try {
+        const payload = {
+            patientId: selectedBooking.patientId,
+            status: 'failed',
+            reason: reasonCancelContent
+        };
+
+        const response = await axios.post('http://10.0.2.2:8080/api/supporter/change-status-patient', payload, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${tokenApi}`,
+          },
+        });
+
+        if (response.status === 200) {
+          alert('Hủy lịch thành công.');
+          setCancelModalVisible(false); // Đóng modal sau khi gửi đánh giá
+          // Reset input
+          //setFeedbackName('');
+          setReasonCancelContent('');
+        } else {
+          alert('Đã xảy ra lỗi khi hủy lịch.');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Đã xảy ra lỗi trong hủy lịch.');
+      }
+    };
   // Hàm render cho mỗi mục trong danh sách
   const renderItem = ({ item }) => {
     let statusColor, statusText;
@@ -138,23 +174,38 @@ const ViewAppointmentsScreen = () => {
          {item.statusId === 1 && (
             <>
             <TouchableOpacity
-                          style={styles.resultButton}
-                          onPress={() => fetchExamDetails(item.patientId, item.dateBooking, item.timeBooking)}
-                        >
-                          <Text style={styles.resultButtonText}>Xem kết quả</Text>
-                        </TouchableOpacity>
-                        {/* Nút "Đánh giá" */}
-                        <TouchableOpacity
-                          style={[styles.resultButton, { backgroundColor: '#e67e22', marginTop: 10 }]}
-                          onPress={() => {
-                            setSelectedBooking(item);
-                            setFeedbackModalVisible(true);
-                          }}
-                        >
-                          <Text style={styles.resultButtonText}>Đánh giá</Text>
-                        </TouchableOpacity>
+              style={styles.resultButton}
+              onPress={() => fetchExamDetails(item.patientId, item.dateBooking, item.timeBooking)}
+            >
+              <Text style={styles.resultButtonText}>Xem kết quả</Text>
+            </TouchableOpacity>
+            {/* Nút "Đánh giá" */}
+            <TouchableOpacity
+              style={[styles.resultButton, { backgroundColor: '#e67e22', marginTop: 10 }]}
+              onPress={() => {
+                setSelectedBooking(item);
+                setFeedbackModalVisible(true);
+              }}
+            >
+              <Text style={styles.resultButtonText}>Đánh giá</Text>
+            </TouchableOpacity>
            </>
            )}
+
+           {/* Nút "Hủy lịch khám" */}
+            {item.statusId === 3  && (
+               <>
+                   <TouchableOpacity
+                     style={[styles.resultButton, { backgroundColor: '#e67e22', marginTop: 10 }]}
+                     onPress={() => {
+                       setSelectedBooking(item);
+                       setCancelModalVisible(true);
+                     }}
+                   >
+                     <Text style={styles.resultButtonText}>Hủy lịch khám</Text>
+                   </TouchableOpacity>
+              </>
+              )}
 
       </View>
     );
@@ -234,6 +285,28 @@ const ViewAppointmentsScreen = () => {
           </View>
         </View>
       </Modal>
+      {/* Modal hiển thị form đánh giá */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={cancelModalVisible}
+          onRequestClose={() => setCancelModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Hủy lịch khám</Text>
+              <TextInput
+                style={[styles.modalInput, { height: 100 }]}
+                placeholder="Lý do hủy"
+                value={reasonCancelContent}
+                onChangeText={(text) => setReasonCancelContent(text)}
+                multiline={true}
+              />
+              <Button title="Xác nhận" color="#27ae60" onPress={submitCancel} />
+              <Button title="Hủy" color="#c0392b" onPress={() => setCancelModalVisible(false)} />
+            </View>
+          </View>
+        </Modal>
     </View>
   );
 };
