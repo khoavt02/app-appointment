@@ -5,6 +5,7 @@ import { Octicons } from "@expo/vector-icons";
 import HomeScreen from "../screens/HomeScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import DoctorListsScreen from "../screens/DoctorListsScreen";
+import AccountScreen from "../screens/AccountScreen";
 import DoctorDetailsScreen from "../screens/DoctorDetailsScreen";
 import AppointmentBookingScreen from "../screens/AppointmentBookingScreen";
 import ViewAppointmentsScreen from "../screens/ViewAppointmentsScreen";
@@ -46,6 +47,15 @@ const AppNavigation = () => {
           ),
         }}
       />
+      <Tab.Screen
+          name="Tài khoản"
+          component={AccountScreen}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person" size={size} color={color} />
+            ),
+          }}
+        />
     </Tab.Navigator>
   );
 };

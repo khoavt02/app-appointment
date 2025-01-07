@@ -13,11 +13,11 @@ const OnboardingNavigation = () => {
   return (
     <Stack.Navigator>
      <Stack.Screen
-            name="Signin"
-            component={SigninScreen}
-            options={{ headerShown: false }}
-            //initialParams={{ updateAuthentication }} // Pass the updateAuthentication function as a parameter
-          />
+        name="Signin"
+        component={SigninScreen}
+        options={{ headerShown: false }}
+        //initialParams={{ updateAuthentication }} // Pass the updateAuthentication function as a parameter
+      />
       <Stack.Screen
         name="Signup"
         component={SignupScreen}

@@ -18,38 +18,48 @@ const ViewAppointmentsScreen = () => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [reasonCancelContent, setReasonCancelContent] = useState('');
   useEffect(() => {
-           const fetchAndParseToken = async () => {
-                const token = await AuthTokenService.getToken();
-                console.log('Token:', token);
-                setTokenApi(token);
-                if (token) {
-                     const userInfo = AuthTokenService.decodeTokenManually(token);
-                     setSearchText(userInfo.email);
-                } else {
-                  console.warn('No token found.');
-                }
-              };
+    const fetchAndParseToken = async () => {
+      try {
+        const token = await AuthTokenService.getToken();
+        setTokenApi(token);
 
-              fetchAndParseToken();
-              fetchPatientBookings();
-        },tokenApi);
-  const fetchPatientBookings = async () => {
+        if (token) {
+          const userInfo = AuthTokenService.decodeTokenManually(token);
+          setSearchText(userInfo.email);
+          console.log(userInfo.email);
+          fetchPatientBookings(userInfo.email); // Gọi với email
+        } else {
+          console.warn('No token found.');
+        }
+      } catch (error) {
+        console.error('Error fetching token:', error);
+      }
+    };
+
+    if (!tokenApi) {
+      fetchAndParseToken();
+    }
+  }, [tokenApi]); // useEffect chỉ chạy khi `tokenApi` thay đổi
+
+  const fetchPatientBookings = async (email) => {
     setLoading(true);
     try {
-      let response = await axios.get(`http://10.0.2.2:8080/api/patient/get-list-booking/${searchText}`);
-
+      console.log(email);
+      const response = await axios.get(`http://10.0.2.2:8080/api/patient/get-list-booking/${email}`);
+      console.log(response);
       if (response.data.status === 1) {
         setPatientBookings(response.data.patientBookings);
       } else {
         alert('Không tìm thấy kết quả.');
       }
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching patient bookings:', error);
       alert('Đã xảy ra lỗi trong quá trình lấy dữ liệu.');
     } finally {
       setLoading(false);
     }
   };
+
 
   // Hàm lấy chi tiết kết quả khám từ API
   const fetchExamDetails = async (patientId, dateBooking, timeBooking) => {
@@ -263,50 +273,64 @@ const ViewAppointmentsScreen = () => {
         visible={feedbackModalVisible}
         onRequestClose={() => setFeedbackModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+        <View style={styles.modalOverlay2}>
+          <View style={styles.modalContainer2}>
             <Text style={styles.modalTitle}>Đánh giá</Text>
             <TextInput
-              style={styles.modalInput}
+              style={styles.input}
               placeholder="Số điện thoại"
               value={feedbackPhone}
               onChangeText={(text) => setFeedbackPhone(text)}
               keyboardType="phone-pad"
             />
             <TextInput
-              style={[styles.modalInput, { height: 100 }]}
+              style={[styles.input, styles.textArea]}
               placeholder="Nội dung đánh giá"
               value={feedbackContent}
               onChangeText={(text) => setFeedbackContent(text)}
               multiline={true}
             />
-            <Button title="Gửi đánh giá" color="#27ae60" onPress={submitFeedback} />
-            <Button title="Hủy" color="#c0392b" onPress={() => setFeedbackModalVisible(false)} />
+            <View style={styles.buttonGroup}>
+              <TouchableOpacity style={[styles.button, styles.submitButton]} onPress={submitFeedback}>
+                <Text style={styles.buttonText}>Gửi đánh giá</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setFeedbackModalVisible(false)}>
+                <Text style={styles.buttonText}>Hủy</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
-      {/* Modal hiển thị form đánh giá */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={cancelModalVisible}
-          onRequestClose={() => setCancelModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Hủy lịch khám</Text>
-              <TextInput
-                style={[styles.modalInput, { height: 100 }]}
-                placeholder="Lý do hủy"
-                value={reasonCancelContent}
-                onChangeText={(text) => setReasonCancelContent(text)}
-                multiline={true}
-              />
-              <Button title="Xác nhận" color="#27ae60" onPress={submitCancel} />
-              <Button title="Hủy" color="#c0392b" onPress={() => setCancelModalVisible(false)} />
+
+      {/* Modal hiển thị form hủy lịch */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={cancelModalVisible}
+        onRequestClose={() => setCancelModalVisible(false)}
+      >
+        <View style={styles.modalOverlay2}>
+          <View style={styles.modalContainer2}>
+            <Text style={styles.modalTitle}>Hủy lịch khám</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Lý do hủy"
+              value={reasonCancelContent}
+              onChangeText={(text) => setReasonCancelContent(text)}
+              multiline={true}
+            />
+            <View style={styles.buttonGroup}>
+              <TouchableOpacity style={[styles.button, styles.submitButton]} onPress={submitCancel}>
+                <Text style={styles.buttonText}>Xác nhận</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setCancelModalVisible(false)}>
+                <Text style={styles.buttonText}>Hủy</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        </Modal>
+        </View>
+      </Modal>
+
     </View>
   );
 };
@@ -410,6 +434,58 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
     borderRadius: 5,
   },
+  modalOverlay2: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContainer2: {
+      width: '90%',
+      backgroundColor: 'white',
+      borderRadius: 10,
+      padding: 20,
+      alignItems: 'center',
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 15,
+    },
+    input: {
+      width: '100%',
+      borderWidth: 1,
+      borderColor: '#ddd',
+      borderRadius: 5,
+      padding: 10,
+      marginBottom: 15,
+    },
+    textArea: {
+      height: 100,
+      textAlignVertical: 'top',
+    },
+    buttonGroup: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      width: '100%',
+    },
+    button: {
+      flex: 1,
+      padding: 10,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginHorizontal: 5,
+    },
+    submitButton: {
+      backgroundColor: '#27ae60',
+    },
+    cancelButton: {
+      backgroundColor: '#c0392b',
+    },
+    buttonText: {
+      color: 'white',
+      fontWeight: 'bold',
+    },
 });
 
 export default ViewAppointmentsScreen;
